@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ur-Latn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kapra Stock</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1c1c1a;--mu:#6b6b66;--ac:#0f6e56;--ac2:#e1f5ee;--bd:#dcdad2;--rd:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161614;--card:#222220;--tx:#eeede8;--mu:#a3a29b;--ac:#5dcaa5;--ac2:#12332a;--bd:#3a3935;--rd:#f09595;color-scheme:dark}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding:12px;max-width:900px;margin:auto}
+h2{font-size:17px;margin:14px 0 8px}
+nav{display:flex;gap:6px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:6px 0;z-index:5}
+nav button{flex:none}
+button,input,select{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;min-width:0}
+button{cursor:pointer}button.on,button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.d{color:var(--rd)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.row>*{flex:1 1 120px}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{color:var(--mu);font-weight:500;font-size:13px}
+.th{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--ac2);display:inline-block;vertical-align:middle}
+.mu{color:var(--mu);font-size:13px}.tot{font-weight:600;text-align:right;margin:8px 0}
+.low{color:var(--rd);font-weight:600}.step{border:1px dashed var(--ac);border-radius:10px;padding:10px;margin-top:8px;background:var(--ac2)}.step input{width:100%;margin-bottom:8px}
+@media print{nav,.noprint{display:none!important}:root:root:root{--bg:#fff;--card:#fff;--tx:#000;--mu:#444;--bd:#bbb}body{padding:0}.card{border:0;padding:0}}
+textarea{width:100%;height:70px;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px}
+</style></head><body>
+<nav id="nav"></nav><div id="app"></div>
+<script>
+const E={q:[],c:[],b:[]};let S;
+try{S=JSON.parse(localStorage.getItem('kapra'))||E}catch(e){S=E}
+function save(){try{localStorage.setItem('kapra',JSON.stringify(S))}catch(e){alert('Storage full hai, backup le lein')}}
+const $=i=>document.getElementById(i);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const col=id=>S.c.find(c=>c.id==id),qual=c=>S.q.find(q=>q.code==c);
+function bal(id){let t=0;S.b.forEach(b=>b.lines.forEach(l=>{if(l.cid==id)t+=b.type=='P'?+l.qty:-l.qty}));return t}
+function thumb(c){return c&&c.img?`<img class="th" src="${c.img}">`:'<span class="th"></span>'}
+function shrink(f,cb){const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,400/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.7))};i.src=r.result};r.readAsDataURL(f)}
+let tab='stock',draft={P:[],S:[]},pend='',pendQ='',rep={t:'stock',f:'',to:''};
+const tabs=[['stock','Stock'],['P','Purchase'],['S','Sale'],['items','Items'],['bills','Bills'],['rep','Report']];
+function go(t){tab=t;$('nav').innerHTML=tabs.map(([k,n])=>`<button class="${k==t?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
+$('app').innerHTML=t=='stock'?vStock():t=='items'?vItems():t=='bills'?vBills():t=='rep'?vRep():vBill(t);if(t=='P'||t=='S')fillColors(t)}
+function vStock(){if(!S.c.length)return '<p class="mu">Pehle Items tab mein quality aur color add karein.</p>';
+return S.q.map(q=>{const cs=S.c.filter(c=>c.qcode==q.code);return `<div class="card"><b>${esc(q.code)}</b> ${esc(q.name)}<div class="sc"><table><tr><th></th><th>Color</th><th>Kharida</th><th>Becha</th><th>Baqi</th></tr>${cs.map(c=>{let p=0,s=0;S.b.forEach(b=>b.lines.forEach(l=>{if(l.cid==c.id){b.type=='P'?p+=+l.qty:s+=+l.qty}}));return `<tr><td>${thumb(c)}</td><td>${esc(c.name)}</td><td>${p}</td><td>${s}</td><td class="${p-s<=0?'low':''}">${p-s}</td></tr>`}).join('')}</table></div></div>`}).join('')}
+function vItems(){return `<div class="card"><h2>Nayi quality</h2><div class="row"><input id="qc" placeholder="Quality code"><input id="qn" placeholder="Quality name"><button class="p" onclick="addQ()">Add</button></div></div>
+${S.q.map(q=>`<div class="card"><b>${esc(q.code)}</b> ${esc(q.name)} <button class="d" onclick="delQ('${esc(q.code)}')">Delete</button>
+<div class="step"><b>Naya color add karein</b><div class="mu">Step 1: Color ka naam likhein</div><input id="cn_${esc(q.code)}" placeholder="Misal: Surkh / Red"><div class="mu">Step 2: Color ki photo lagayein (gallery ya camera se, zaroori nahi)</div><input type="file" accept="image/*" onchange="pic(this,'${esc(q.code)}')"><div id="pv_${esc(q.code)}" class="mu" style="margin-bottom:8px">Abhi photo nahi lagi</div><div class="mu">Step 3: Neeche button dabayein</div><button class="p" onclick="addC('${esc(q.code)}')">Color save karein</button></div>
+${S.c.filter(c=>c.qcode==q.code).map(c=>`<div class="row">${thumb(c)}<span>${esc(c.name)}</span><button class="d" style="flex:none" onclick="delC('${c.id}')">X</button></div>`).join('')}</div>`).join('')}
+<div class="card"><h2>Backup</h2><textarea id="bk" placeholder="Backup yahan aayega / restore ke liye paste karein"></textarea><div class="row"><button onclick="$('bk').value=JSON.stringify(S)">Backup dikhao</button><button onclick="restore()">Restore</button></div></div>`}
+function pic(el,qc){const f=el.files[0];if(f)shrink(f,d=>{pend=d;pendQ=qc;$('pv_'+qc).innerHTML=`<img class="th" src="${d}"> Photo lag gayi ✓`})}
+function addQ(){const c=$('qc').value.trim(),n=$('qn').value.trim();if(!c||!n)return alert('Code aur name likhein');if(qual(c))return alert('Yeh code pehle se hai');S.q.push({code:c,name:n});save();go('items')}
+function addC(qc){const n=$('cn_'+qc).value.trim();if(!n)return alert('Color name likhein');const im=pendQ==qc?pend:'';if(!im&&!confirm('Photo nahi lagayi. Phir bhi color add karein?'))return;S.c.push({id:uid(),qcode:qc,name:n,img:im});pend='';pendQ='';save();go('items')}
+function delQ(c){if(S.b.some(b=>b.lines.some(l=>col(l.cid)?.qcode==c)))return alert('Is quality ki bills hain, delete nahi ho sakti');if(!confirm('Delete?'))return;S.q=S.q.filter(q=>q.code!=c);S.c=S.c.filter(x=>x.qcode!=c);save();go('items')}
+function delC(id){if(S.b.some(b=>b.lines.some(l=>l.cid==id)))return alert('Is color ki bills hain');S.c=S.c.filter(c=>c.id!=id);save();go('items')}
+function restore(){try{const d=JSON.parse($('bk').value);if(!d.q||!d.c||!d.b)throw 0;S=d;save();go('items')}catch(e){alert('Backup text theek nahi')}}
+function nextNo(t){return (t=='P'?'P-':'S-')+String(S.b.filter(b=>b.type==t).length+1).padStart(3,'0')}
+function vBill(t){const n=t=='P'?'Purchase':'Sale';return `<div class="card"><h2>${n} bill ${nextNo(t)}</h2>
+<div class="row"><input id="pt" placeholder="Party ka naam"><input id="dt" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+<div class="row"><select id="sq" onchange="fillColors('${t}')">${S.q.map(q=>`<option value="${esc(q.code)}">${esc(q.code)} - ${esc(q.name)}</option>`).join('')}</select><select id="sc"></select></div>
+<div class="row"><input id="qt" type="number" min="0" step="any" placeholder="Qty (meter)"><input id="rt" type="number" min="0" step="any" placeholder="Rate"><button class="p" onclick="addL('${t}')">Line add</button></div></div>
+<div class="card"><div id="ls"></div></div>`}
+function fillColors(t){const q=$('sq').value;$('sc').innerHTML=S.c.filter(c=>c.qcode==q).map(c=>`<option value="${c.id}">${esc(c.name)}${t=='S'?' (stock '+bal(c.id)+')':''}</option>`).join('');showL(t)}
+function addL(t){const cid=$('sc').value,qty=+$('qt').value,rate=+$('rt').value;if(!cid||qty<=0)return alert('Color aur qty chunein');
+if(t=='S'){const used=draft.S.filter(l=>l.cid==cid).reduce((a,l)=>a+l.qty,0);if(qty+used>bal(cid))return alert('Stock kam hai: '+(bal(cid)-used))}
+draft[t].push({cid,qty,rate});$('qt').value='';showL(t)}
+function showL(t){const d=draft[t];let tot=0;$('ls').innerHTML=d.length?`<div class="sc"><table><tr><th></th><th>Quality</th><th>Color</th><th>Qty</th><th>Rate</th><th>Amount</th><th></th></tr>${d.map((l,i)=>{const c=col(l.cid),a=l.qty*l.rate;tot+=a;return `<tr><td>${thumb(c)}</td><td>${esc(c.qcode)}</td><td>${esc(c.name)}</td><td>${l.qty}</td><td>${l.rate}</td><td>${a}</td><td><button class="d" onclick="draft['${t}'].splice(${i},1);showL('${t}')">X</button></td></tr>`}).join('')}</table></div><div class="tot">Total: ${tot}</div><button class="p" onclick="saveB('${t}')">Bill save karein</button>`:'<span class="mu">Abhi koi line nahi.</span>'}
+function saveB(t){S.b.push({id:uid(),type:t,no:nextNo(t),date:$('dt').value,party:$('pt').value.trim(),lines:draft[t]});draft[t]=[];save();go('bills')}
+function vBills(){return S.b.length?[...S.b].reverse().map(b=>{const tot=b.lines.reduce((a,l)=>a+l.qty*l.rate,0);return `<details class="card"><summary><b>${b.no}</b> ${esc(b.party)} <span class="mu">${b.date}</span> - ${tot}</summary><div class="sc"><table>${b.lines.map(l=>{const c=col(l.cid);return `<tr><td>${thumb(c)}</td><td>${c?esc(c.qcode+' '+c.name):'?'}</td><td>${l.qty}</td><td>${l.rate}</td><td>${l.qty*l.rate}</td></tr>`}).join('')}</table></div><button class="d" onclick="if(confirm('Bill delete?')){S.b=S.b.filter(x=>x.id!='${b.id}');save();go('bills')}">Delete bill</button></details>`}).join(''):'<p class="mu">Abhi koi bill nahi.</p>'}
+function vRep(){const o=(v,n)=>`<option value="${v}" ${rep.t==v?'selected':''}>${n}</option>`;return `<div class="card noprint"><h2>Report</h2><div class="row"><select onchange="rep.t=this.value;go('rep')">${o('stock','Stock report')}${o('P','Purchase report')}${o('S','Sale report')}</select><input type="date" value="${rep.f}" onchange="rep.f=this.value;go('rep')"><input type="date" value="${rep.to}" onchange="rep.to=this.value;go('rep')"></div><div class="mu">Purchase/Sale report ke liye date se-tak chun sakte hain (khali chhorein to sab).</div><button class="p" style="margin-top:8px" onclick="window.print()">PDF / Print</button><div class="mu">Print window mein Destination: Save as PDF chunein.</div></div><div class="card">${repBody()}</div>`}
+function repBody(){const d=new Date().toISOString().slice(0,10);if(rep.t=='stock'){let g=0;const rows=S.c.map(c=>{const b=bal(c.id);g+=b;return `<tr><td>${esc(c.qcode)}</td><td>${thumb(c)}</td><td>${esc(c.name)}</td><td>${b}</td></tr>`}).join('');return `<h2>Stock Report - ${d}</h2><div class="sc"><table><tr><th>Quality</th><th></th><th>Color</th><th>Baqi</th></tr>${rows}</table></div><div class="tot">Kul stock: ${g}</div>`}
+let tot=0,q=0;const rows=S.b.filter(b=>b.type==rep.t&&(!rep.f||b.date>=rep.f)&&(!rep.to||b.date<=rep.to)).flatMap(b=>b.lines.map(l=>{const c=col(l.cid),a=l.qty*l.rate;tot+=a;q+=l.qty;return `<tr><td>${b.no}</td><td>${b.date}</td><td>${esc(b.party)}</td><td>${c?esc(c.qcode):''}</td><td>${thumb(c)}</td><td>${c?esc(c.name):''}</td><td>${l.qty}</td><td>${l.rate}</td><td>${a}</td></tr>`})).join('');return `<h2>${rep.t=='P'?'Purchase':'Sale'} Report ${rep.f||''} ${rep.to?'se '+rep.to:''}</h2><div class="sc"><table><tr><th>Bill</th><th>Date</th><th>Party</th><th>Quality</th><th></th><th>Color</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rows}</table></div><div class="tot">Kul qty: ${q} | Kul amount: ${tot}</div>`}
+go('stock');
+</script></body></html>
